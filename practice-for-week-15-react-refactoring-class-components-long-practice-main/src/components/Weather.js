@@ -30,7 +30,7 @@ import { useState, useEffect } from 'react';
 //       "process.env.<variable_name>". Make sure to .gitignore your .env file!
 //       Also remember to restart your server (i.e., re-run "npm start") whenever
 //       you change your .env file. */
-//       const apiKey = 'process.env.REACT_APP_WEATHER_API';
+//       const apiKey = process.env.REACT_APP_WEATHER_API;
 
 //       const params = {
 //         lat: location.coords.latitude,
@@ -82,56 +82,42 @@ import { useState, useEffect } from 'react';
 //   }
 // }
 
-class Weather extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = {
-        weather: null
-      };
-    }
+function Weather() {
+  const [weatherData, setWeatherData] = useState(null)
+
+  const pollWeather = async (location) => {
+    let url = 'http://api.openweathermap.org/data/2.5/weather?';
+    const apiKey = process.env.REACT_APP_WEATHER_API
+
+    const params = {
+      lat: location.coords.latitude,
+      lon: location.coords.longitude,
+      appid: apiKey
+    };
     
-    componentDidMount() {
-      navigator.geolocation?.getCurrentPosition(
-        this.pollWeather,
-        (err) => console.log(err),
-        { timeout: 10000 }
-      );
+    url += toQueryString(params);
+
+    const res = await fetch(url);
+    if (res.ok) {
+      const weather = await res.json();
+      setWeatherData(weather);
     }
-
-    pollWeather = async (location) => {
-      let url = 'http://api.openweathermap.org/data/2.5/weather?';
-
-      /* Remember that it's unsafe to expose your API key. (Note that pushing
-      files that include your key to Github will expose your key!) In
-      production, you would definitely save your key in an environment variable,
-      so do that here. Since this project runs in your local environment
-      (localhost), save your key as an environment variable in a .env file in
-      the root directory of your app. You can then access the key here as
-      "process.env.<variable_name>". Make sure to .gitignore your .env file!
-      Also remember to restart your server (i.e., re-run "npm start") whenever
-      you change your .env file. */
-      const apiKey = 'process.env.REACT_APP_WEATHER_API';
-
-      const params = {
-        lat: location.coords.latitude,
-        lon: location.coords.longitude,
-        appid: apiKey
-      };
-      
-      url += toQueryString(params);
-
-      const res = await fetch(url);
-      if (res.ok) {
-        const weather = await res.json();
-        this.setState({ weather });
-      }
-      else {
-        alert ("Check Weather API key!")
-      }
+    else {
+      alert ("Check Weather API key!")
     }
+  }
 
-  render() {
-    const weather = this.state.weather;
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      pollWeather,
+      (err) => console.log(err),
+      { timeout: 10000 }
+    );
+  }, [])
+  
+
+
+    const weather = weatherData;
     let content = <div className='loading'>loading weather...</div>;
     
     if (weather) {
@@ -150,7 +136,7 @@ class Weather extends React.Component {
         </div>
       )
     }
-
+    
     return (
       <section className="weather-section">
         <h1>Weather</h1>
@@ -160,6 +146,5 @@ class Weather extends React.Component {
       </section>
     );
   }
-}
 
 export default Weather;
